@@ -136,11 +136,10 @@ static inline unsigned int aa_dfa_null_transition(struct aa_dfa *dfa,
 	return aa_dfa_next(dfa, start, 0);
 }
 
-static inline bool path_mediated_fs(struct inode *inode)
+static inline bool path_mediated_fs(struct dentry *dentry)
 {
-	return !(inode->i_sb->s_flags & MS_NOUSER);
+	return !(dentry->d_sb->s_flags & MS_NOUSER);
 }
-
 
 struct counted_str {
 	struct kref count;
