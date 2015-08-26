@@ -21,6 +21,7 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 
+#include "backport.h"
 #include "file.h"
 
 struct aa_profile;
