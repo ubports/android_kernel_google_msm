@@ -607,7 +607,7 @@ int aa_change_hat(const char *hats[], int count, u64 token, bool permtest)
 	 * There is no exception for unconfined as change_hat is not
 	 * available.
 	 */
-	if (task_no_new_privs(current))
+	if (current->no_new_privs)
 		return -EPERM;
 
 	/* released below */
@@ -766,20 +766,8 @@ int aa_change_profile(const char *ns_name, const char *hname, bool onexec,
 	 * no_new_privs is set because this aways results in a reduction
 	 * of permissions.
 	 */
-	if (task_no_new_privs(current) && !unconfined(label)) {
+	if (current->no_new_privs && !unconfined(label)) {
 		aa_put_label(label);
-		put_cred(cred);
-		return -EPERM;
-	}
-
-	/*
-	 * Fail explicitly requested domain transitions if no_new_privs
-	 * and not unconfined.
-	 * Domain transitions from unconfined are allowed even when
-	 * no_new_privs is set because this aways results in a reduction
-	 * of permissions.
-	 */
-	if (task_no_new_privs(current) && !unconfined(profile)) {
 		put_cred(cred);
 		return -EPERM;
 	}
@@ -833,6 +821,13 @@ int aa_change_profile(const char *ns_name, const char *hname, bool onexec,
 	error = may_change_ptraced_domain(target, &info);
 	if (error)
 		goto audit;
+
+	if (onexec && !current_is_single_threaded()) {
+		info = "not a single threaded task";
+		error = -EACCES;
+		goto audit;
+	}
+
 
 	if (permtest)
 		goto audit;

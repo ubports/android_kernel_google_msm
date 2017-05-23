@@ -155,6 +155,7 @@ void *__aa_kvmalloc(size_t size, gfp_t flags)
 	return buffer;
 }
 
+
 __counted char *aa_str_alloc(int size, gfp_t gfp)
 {
 	struct counted_str *str;
@@ -216,17 +217,10 @@ const char *aa_file_perm_names[] = {
 };
 
 /**
- * do_vfree - workqueue routine for freeing vmalloced memory
- * @work: data to be freed
- *
- * The work_struct is overlaid to the data being freed, as at the point
- * the work is scheduled the data is no longer valid, be its freeing
- * needs to be delayed until safe.
  * aa_perm_mask_to_str - convert a perm mask to its short string
  * @str: character buffer to store string in (at least 10 characters)
  * @mask: permission mask to convert
  */
-static void do_vfree(struct work_struct *work)
 void aa_perm_mask_to_str(char *str, const char *chrs, u32 mask)
 {
 	unsigned int i, perm = 1;
@@ -299,18 +293,14 @@ static void aa_audit_perms_cb(struct audit_buffer *ab, void *va)
 void map_old_policy_perms(struct aa_dfa *dfa, unsigned int state,
 			  struct aa_perms *perms)
 {
-	vfree(work);
 
 }
 
 /**
- * kvfree - free an allocation do by kvmalloc
- * @buffer: buffer to free (MAYBE_NULL)
  * aa_apply_modes_to_perms - apply namespace and profile flags to perms
  * @profile: that perms where computed from
  * @perms: perms to apply mode modifiers to
  *
- * Free a buffer allocated by kvmalloc
  * TODO: split into profile and ns based flags for when accumulating perms
  */
 void aa_apply_modes_to_perms(struct aa_profile *profile, struct aa_perms *perms)
@@ -373,15 +363,6 @@ void aa_compute_perms(struct aa_dfa *dfa, unsigned int state,
  * @accum - perms struct to accumulate into
  * @addend - perms struct to add to @accum
  */
-void kvfree(void *buffer)
-{
-	if (is_vmalloc_addr(buffer)) {
-		/* Data is no longer valid so just use the allocated space
-		 * as the work_struct
-		 */
-		struct work_struct *work = (struct work_struct *) buffer;
-		INIT_WORK(work, do_vfree);
-		schedule_work(work);
 void aa_perms_accum_raw(struct aa_perms *accum, struct aa_perms *addend)
 {
 	accum->deny |= addend->deny;
@@ -427,7 +408,6 @@ void aa_profile_match_label(struct aa_profile *profile, const char *label,
 		state = aa_dfa_match(profile->policy.dfa, state, label);
 		aa_compute_perms(profile->policy.dfa, state, perms);
 	} else
-		kfree(buffer);
 		memset(perms, 0, sizeof(*perms));
 }
 

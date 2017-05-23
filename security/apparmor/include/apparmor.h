@@ -53,6 +53,7 @@
 extern enum audit_mode aa_g_audit;
 extern bool aa_g_audit_header;
 extern bool aa_g_debug;
+extern bool aa_g_hash_policy;
 extern bool aa_g_lock_policy;
 extern bool aa_g_logsyscall;
 extern bool aa_g_paranoid_load;
@@ -85,10 +86,12 @@ extern bool aa_g_unconfined_init;
 /* Flag indicating whether initialization completed */
 extern int apparmor_initialized __initdata;
 
- /* fn's in lib */
+/* fn's in lib */
+char *aa_split_fqname(char *args, char **ns_name);
 char *aa_splitn_fqname(char *fqname, size_t n, char **ns_name, size_t *ns_len);
 void aa_info_message(const char *str);
 void *__aa_kvmalloc(size_t size, gfp_t flags);
+
 
 static inline void *kvmalloc(size_t size)
 {
@@ -105,7 +108,6 @@ static inline int kref_get_not0(struct kref *kref)
 {
 	return atomic_inc_not_zero(&kref->refcount);
 }
-
 
 /**
  * aa_strneq - compare null terminated @str to a non null terminated substring
@@ -136,10 +138,11 @@ static inline unsigned int aa_dfa_null_transition(struct aa_dfa *dfa,
 	return aa_dfa_next(dfa, start, 0);
 }
 
-static inline bool path_mediated_fs(struct dentry *dentry)
+static inline bool path_mediated_fs(struct inode *inode)
 {
-	return !(dentry->d_sb->s_flags & MS_NOUSER);
+	return !(inode->i_sb->s_flags & MS_NOUSER);
 }
+
 
 struct counted_str {
 	struct kref count;
